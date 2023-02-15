@@ -6,12 +6,15 @@ const saltRounds = 10;
 
 const User = require("../models/User.model");
 
-router.get("/signin", (req, res, next) => {
+const isLoggedOut = require("../middleware/isLoggedOut");
+const isLoggedIn = require("../middleware/isLoggedIn");
+
+router.get("/signin", isLoggedOut, (req, res, next) => {
     res.render("users/signin");
 
 });
 
-router.post("/signin", (req, res, next) => {
+router.post("/signin",  isLoggedOut, (req, res, next) => {
     
     let {username, password, repeatPassword} = req.body;
 
@@ -48,11 +51,11 @@ router.post("/signin", (req, res, next) => {
 
 });
 
-router.get("/login", (req, res, next) => {
+router.get("/login", isLoggedOut, (req, res, next) => {
     res.render("users/login");
 });
 
-router.post("/login", (req, res, next) => {
+router.post("/login", isLoggedOut, (req, res, next) => {
     let {username, password} = req.body;
     if (username == "" || password == ""){
         res.render("users/login")
@@ -67,7 +70,7 @@ router.post("/login", (req, res, next) => {
         if(bcrypt.compare(password, results[0].password)){
             req.session.currentUser = username;
             console.log(req.session.currentUser)
-            res.redirect("/user/profile");
+            res.redirect("/user/private");
         } else {
             res.render("users/login")
         }
@@ -75,10 +78,22 @@ router.post("/login", (req, res, next) => {
     .catch (err => next(err))
 })
 
-router.get("/profile", (req, res, next) => {
-    res.render("users/profile", {username: req.session.currentUser});
+router.get("/private", isLoggedIn, (req, res, next) => {
+    res.render("users/private", {username: req.session.currentUser});
 
 });
+
+router.get("/main", isLoggedOut, (req, res, next) => {
+    res.render("users/main", {username: req.session.currentUser});
+
+});
+
+router.get("/logout", isLoggedIn, (req, res, next) => {
+    req.session.destroy(err => {
+        if(err) next(err);
+        else res.redirect("/user/login")
+    })
+})
 
 
 module.exports = router;
